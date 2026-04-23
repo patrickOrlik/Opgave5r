@@ -37,6 +37,7 @@ ADMUX |= channel;
 
 
 int main(){
+  init_phase_pwm();
   init_adc();
   sei();
   CTC_init();
