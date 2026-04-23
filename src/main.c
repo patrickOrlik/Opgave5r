@@ -7,6 +7,10 @@
 #include "I2C.h"
 #include "ssd1306.h"
 #include "clock.h"
+#define X1 0
+#define Y1 1 
+#define X2 2
+#define Y2 3
 
 unsigned int value = 0;
 bool Adcready = false;
@@ -38,13 +42,13 @@ int main(){
   while(1){
    if (Adcready) {
    
- sprintf(buffer, "X1:%4d", Adcvalues[0]);
+ sprintf(buffer, "X1:%4d", Adcvalues[X1]);
  sendStrXY(buffer, 0, 0);
- sprintf(buffer, "Y1:%4d", Adcvalues[1]);
+ sprintf(buffer, "Y1:%4d", Adcvalues[Y1]);
  sendStrXY(buffer, 2, 0);
- sprintf(buffer, "X2:%4d", Adcvalues[2]);
+ sprintf(buffer, "X2:%4d", Adcvalues[X2]);
  sendStrXY(buffer, 4, 0);
- sprintf(buffer, "Y2:%4d", Adcvalues[3]);
+ sprintf(buffer, "Y2:%4d", Adcvalues[Y2]);
  sendStrXY(buffer, 6, 0);
  Adcready= false;
  
