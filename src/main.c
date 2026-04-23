@@ -27,9 +27,28 @@ void init_phase_pwm()
     ICR1 = 20000;
     OCR1A = 1500;
 }
-void setpwm(unsigned int Value)
+void setpwm(unsigned int value)
 {
-  OCR1A = ((Value+1)*2.5);
+
+  
+
+ if (value>OCR1A){
+ while(value> OCR1A){
+  OCR1A = OCR1A + 1;
+  _delay_us(350);
+ } }
+ else if(value<OCR1A) {
+  while(value<OCR1A){
+  OCR1A = OCR1A - 1;
+  _delay_us(350);
+
+ }
+ }
+
+
+}
+long map(long x, long in_min, long in_max, long out_min, long out_max) {
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
 void init_adc(){
@@ -53,6 +72,7 @@ int main(){
   InitializeDisplay();
   clear_display();
   char buffer[16];
+  map(Adcvalues[X1],0,1023,500,2500);
   while(1){
    if (Adcready) {
    
@@ -65,7 +85,7 @@ int main(){
  sprintf(buffer, "Y2:%4d", Adcvalues[Y2]);
  sendStrXY(buffer, 6, 0);
  Adcready= false;
- setpwm(Adcvalues[X1]);
+ setpwm(map(Adcvalues[X1],0,1023,500,2500));
 _delay_ms(5);
 
     }
