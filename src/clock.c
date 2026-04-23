@@ -13,10 +13,10 @@
 
 void CTC_init (void)
 {
-    TCCR1B |= (1<<CS11)|(1<<CS10);// sets prescaler to 64
-    TCCR1B |= (1<<WGM12); // enables CTC mode 
-    OCR1A = 249; // sets output compare match amount
-    TIMSK1 |= (1<<OCIE1A); // enable interrupt
+    TCCR0B |= (1<<CS11)|(1<<CS10);// sets prescaler to 64
+    TCCR0B |= (1<<WGM12); // enables CTC mode 
+    OCR0A = 249; // sets output compare match amount
+    TIMSK0 |= (1<<OCIE1A); // enable interrupt
 }
 
 void external_int()

@@ -19,6 +19,15 @@ unsigned int channel = 0;
 unsigned int Adcvalues[4] = {0};
 char tnpbuff [4]= {0};
 
+void init_phase_pwm()
+{
+    DDRB |= (1<<PB5);
+    TCCR1A |= (1<<COM1A1);
+    TCCR1B =(1<<CS11)|(1<<WGM13);
+    ICR1 = 20000;
+    OCR1A = 1500;
+}
+
 void init_adc(){
 ADCSRA |= (1<<ADPS0)|(1<<ADPS1)|(1<<ADPS2); // intern clock 125khz
 ADMUX |= (1<<REFS0); // Voltage reference selection
@@ -32,6 +41,7 @@ ADMUX |= channel;
 
 
 int main(){
+  init_phase_pwm();
   init_adc();
   sei();
   CTC_init();
