@@ -27,6 +27,10 @@ void init_phase_pwm()
     ICR1 = 20000;
     OCR1A = 1500;
 }
+void setpwm(unsigned int Value)
+{
+  OCR1A = ((Value+1)*2.5);
+}
 
 void init_adc(){
 ADCSRA |= (1<<ADPS0)|(1<<ADPS1)|(1<<ADPS2); // intern clock 125khz
@@ -61,7 +65,7 @@ int main(){
  sprintf(buffer, "Y2:%4d", Adcvalues[Y2]);
  sendStrXY(buffer, 6, 0);
  Adcready= false;
- 
+ setpwm(Adcvalues[X1]);
 _delay_ms(5);
 
     }
