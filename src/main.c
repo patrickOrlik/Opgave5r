@@ -27,19 +27,41 @@ void init_phase_pwm()
     ICR1 = 20000;
     OCR1A = 1500;
 }
-void setpwm(unsigned int value)
+void init_phase_pwm3()
 {
+    DDRE |= (1<<PE3);
+    TCCR3A |= (1<<COM1A1);
+    TCCR3B =(1<<CS11)|(1<<WGM13);
+    ICR3 = 20000;
+    OCR1A = 1500;
+}
+void init_phase_pwm4()
+{
+    DDRH |= (1<<PH3);
+    TCCR4A |= (1<<COM1A1);
+    TCCR4B =(1<<CS11)|(1<<WGM13);
+    ICR4 = 20000;
+    OCR4A = 1500;
+}
 
-  
-
- if (value>OCR1A){
- while(value> OCR1A){
-  OCR1A = OCR1A + 1;
+void init_phase_pwm5()
+{
+    DDRL |= (1<<PL3);
+    TCCR5A |= (1<<COM1A1);
+    TCCR5B =(1<<CS11)|(1<<WGM13);
+    ICR5 = 20000;
+    OCR5A = 1500;
+}
+void setpwm(unsigned int value,volatile int* ocrRegister)
+{
+ if (value>*ocrRegister){
+ while(value> *ocrRegister){
+  *ocrRegister =  *ocrRegister + 1;
   _delay_us(350);
  } }
- else if(value<OCR1A) {
-  while(value<OCR1A){
-  OCR1A = OCR1A - 1;
+ else if(value<*ocrRegister) {
+  while(value<*ocrRegister){
+  *ocrRegister = *ocrRegister - 1;
   _delay_us(350);
 
  }
@@ -65,6 +87,9 @@ ADMUX |= channel;
 
 int main(){
   init_phase_pwm();
+  init_phase_pwm3();
+  init_phase_pwm4();
+  init_phase_pwm5();
   init_adc();
   sei();
   CTC_init();
@@ -85,7 +110,11 @@ int main(){
  sprintf(buffer, "Y2:%4d", Adcvalues[Y2]);
  sendStrXY(buffer, 6, 0);
  Adcready= false;
- setpwm(map(Adcvalues[X1],0,1023,500,2500));
+ setpwm(map(Adcvalues[X1],0,1023,500,2500),&OCR1A);
+ setpwm(map(Adcvalues[Y1],0,1023,500,2500),&OCR3A);
+ setpwm(map(Adcvalues[X2],0,1023,500,2500),&OCR4A);
+ setpwm(map(Adcvalues[Y2],0,1023,500,2500),&OCR5A);
+
 _delay_ms(5);
 
     }
