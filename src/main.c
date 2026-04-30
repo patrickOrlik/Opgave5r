@@ -7,11 +7,8 @@
 #include "I2C.h"
 #include "ssd1306.h"
 #include "clock.h"
-#define X1 0
-#define Y1 1 
-#define X2 2
-#define Y2 3
 
+enum cord{X1,Y1,X2,Y2};
 unsigned int value = 0;
 bool Adcready = false;
 volatile char Adcres[10] = {0};
@@ -52,6 +49,7 @@ void init_phase_pwm5()
     ICR5 = 20000;
     OCR5A = 1500;
 }
+
 void setpwm(unsigned int value,volatile int* ocrRegister)
 {
  if (value>*ocrRegister){
@@ -110,10 +108,10 @@ int main(){
  sprintf(buffer, "Y2:%4d", Adcvalues[Y2]);
  sendStrXY(buffer, 6, 0);
  Adcready= false;
-// setpwm(map(Adcvalues[X1],0,1023,500,2500),&OCR1A);
- //setpwm(map(Adcvalues[Y1],0,1023,500,2500),&OCR3A);
- //setpwm(map(Adcvalues[X2],0,1023,500,2500),&OCR4A);
-// setpwm(map(Adcvalues[Y2],0,1023,500,2500),&OCR5A);
+setpwm(map(Adcvalues[X1],0,1023,500,2500),&OCR1A);
+ setpwm(map(Adcvalues[Y1],0,1023,500,2500),&OCR3A);
+ setpwm(map(Adcvalues[X2],0,1023,500,2500),&OCR4A);
+setpwm(map(Adcvalues[Y2],0,1023,500,2500),&OCR5A);
 
 _delay_ms(5);
 
