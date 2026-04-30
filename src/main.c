@@ -30,10 +30,10 @@ void init_phase_pwm()
 void init_phase_pwm3()
 {
     DDRE |= (1<<PE3);
-    TCCR3A |= (1<<COM1A1);
+    TCCR3A |= (1<<COM3A1);
     TCCR3B =(1<<CS11)|(1<<WGM13);
     ICR3 = 20000;
-    OCR1A = 1500;
+    OCR3A = 1500;
 }
 void init_phase_pwm4()
 {
@@ -110,10 +110,10 @@ int main(){
  sprintf(buffer, "Y2:%4d", Adcvalues[Y2]);
  sendStrXY(buffer, 6, 0);
  Adcready= false;
- setpwm(map(Adcvalues[X1],0,1023,500,2500),&OCR1A);
- setpwm(map(Adcvalues[Y1],0,1023,500,2500),&OCR3A);
- setpwm(map(Adcvalues[X2],0,1023,500,2500),&OCR4A);
- setpwm(map(Adcvalues[Y2],0,1023,500,2500),&OCR5A);
+// setpwm(map(Adcvalues[X1],0,1023,500,2500),&OCR1A);
+ //setpwm(map(Adcvalues[Y1],0,1023,500,2500),&OCR3A);
+ //setpwm(map(Adcvalues[X2],0,1023,500,2500),&OCR4A);
+// setpwm(map(Adcvalues[Y2],0,1023,500,2500),&OCR5A);
 
 _delay_ms(5);
 
