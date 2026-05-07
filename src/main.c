@@ -4,6 +4,13 @@
 #include <string.h>
 #include <avr/interrupt.h>
 #include <stdbool.h>
+
+#include <avr/io.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <avr/interrupt.h>
+#include <stdbool.h>
 #include "I2C.h"
 #include "ssd1306.h"
 #include "clock.h"
@@ -55,12 +62,12 @@ void setpwm(unsigned int value,volatile int* ocrRegister)
  if (value>*ocrRegister){
  while(value> *ocrRegister){
   *ocrRegister =  *ocrRegister + 1;
-  _delay_us(350);
+  _delay_us(10);
  } }
  else if(value<*ocrRegister) {
   while(value<*ocrRegister){
   *ocrRegister = *ocrRegister - 1;
-  _delay_us(350);
+  _delay_us(10);
 
  }
  }
@@ -113,7 +120,7 @@ setpwm(map(Adcvalues[X1],0,1023,500,2500),&OCR1A);
  setpwm(map(Adcvalues[X2],0,1023,500,2500),&OCR4A);
 setpwm(map(Adcvalues[Y2],0,1023,500,2500),&OCR5A);
 
-_delay_ms(5);
+_delay_ms(1);
 
     }
 
@@ -141,4 +148,3 @@ ISR(TIMER0_COMPA_vect) {
         channel = 0;
     }
 }
-
