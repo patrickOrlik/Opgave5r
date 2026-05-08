@@ -4,7 +4,7 @@
 #include <string.h>
 #include <avr/interrupt.h>
 #include <stdbool.h>
-
+#include <math.h>
 #include <avr/io.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,10 +23,10 @@ enum cord
     Y2
 };
 unsigned int value = 0;
-bool Adcready = false;
+volatile bool Adcready = false;
 volatile char Adcres[10] = {0};
-unsigned int channel = 0;
-unsigned int Adcvalues[4] = {0};
+volatile unsigned int channel = 0;
+volatile unsigned int Adcvalues[4] = {0};
 char tnpbuff[4] = {0};
 volatile uint16_t *PWMbuffer[4] = {&OCR1A, &OCR3A, &OCR4A, &OCR5A};
 
@@ -68,7 +68,7 @@ void init_phase_pwm5()
     OCR5A = 1500;
 }
 
-void setpwm(unsigned int value[])
+void setpwm(volatile unsigned int value[])
 {
     // value[X1] = map(value[X1],0,1023,500,2500);
     int tempval[4];
@@ -78,45 +78,46 @@ void setpwm(unsigned int value[])
     }
     bool DONESTATE[4] = {false, false, false, false};
     // unsigned int tmp = map(value[X1],0,1023,500,2500);
-    while (!DONESTATE[X1] || !DONESTATE[X2] || !DONESTATE[Y1] || !DONESTATE[Y2])
+    // while (!DONESTATE[X1] || !DONESTATE[X2] || !DONESTATE[Y1] || !DONESTATE[Y2])
+    // {
+    for (int channels = 0; channels < 4; channels++)
     {
-        for (int channels = 0; channels < 4; channels++)
+        
+        // if((Adcvalues[channels]-tempval[channels])>50){
+        //     tempval[channels] = Adcvalues[channels];
+
+        // }
+        // if (!DONESTATE[channels])
+        // {
+        if (tempval[channels] > *PWMbuffer[channels])
         {
-            // if((Adcvalues[channels]-tempval[channels])>50){
-            //     tempval[channels] = Adcvalues[channels];
-                
-            // }
-            if (!DONESTATE[channels])
-            {
-                if (tempval[channels] > *PWMbuffer[channels])
-                {
-                    // while (tempval[channels] > *PWMbuffer[channels])
-                    //{
-                    *PWMbuffer[channels] = *PWMbuffer[channels] + 1;
-                    // _delay_us(250);
-                    //}
-                }
-                else if (tempval[channels] < *PWMbuffer[channels])
-                {
-                    // while (tempval[channels] < *PWMbuffer[channels])
-                    //{
-                    *PWMbuffer[channels] = *PWMbuffer[channels] - 1;
-                    // _delay_us(250);
-                    //}
-                }
-                else {
-                    DONESTATE[channels] = true;
-                }
-                _delay_us(750);
-            }
+            // while (tempval[channels] > *PWMbuffer[channels])
+            //{
+            *PWMbuffer[channels] = *PWMbuffer[channels] + 10;
+            // _delay_us(250);
+            //}
         }
+        else if (tempval[channels] < *PWMbuffer[channels])
+        {
+            // while (tempval[channels] < *PWMbuffer[channels])
+            //{
+            *PWMbuffer[channels] = *PWMbuffer[channels] - 10;
+            // _delay_us(250);
+            //}
+        }
+        // else
+        // {
+        //     DONESTATE[channels] = true;
+        // }
+        // _delay_us(100);
     }
+    // }
 }
 
 void init_adc()
 {
     ADCSRA |= (1 << ADPS0) | (1 << ADPS1) | (1 << ADPS2); // intern clock 125khz
-    ADMUX |= (1 << REFS0);                                // Voltage reference selection
+    ADMUX = (1 << REFS0);                                // Voltage reference selection
     ADCSRA |= (1 << ADEN) | (1 << ADIE);                  // enable adc and interrupt complete
 }
 void select_channel(char channel)
@@ -158,7 +159,6 @@ int main()
             // setpwm(map(Adcvalues[X2],0,1023,500,2500),&OCR4A);
             // setpwm(map(Adcvalues[Y2],0,1023,500,2500),&OCR5A);
             _delay_ms(1);
-            
         }
     }
 }
