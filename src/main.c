@@ -127,48 +127,26 @@ void updateposition_UART()
 
 void setpwm(volatile unsigned int value[])
 {
-    // value[X1] = map(value[X1],0,1023,500,2500);
     int tempval[4];
     for (int i = 0; i < 4; i++)
     {
         tempval[i] = map(value[i], 0, 1023, 500, 2500);
     }
-    bool DONESTATE[4] = {false, false, false, false};
-    // unsigned int tmp = map(value[X1],0,1023,500,2500);
-    // while (!DONESTATE[X1] || !DONESTATE[X2] || !DONESTATE[Y1] || !DONESTATE[Y2])
-    // {
+
     for (int channels = 0; channels < 4; channels++)
     {
 
-        // if((Adcvalues[channels]-tempval[channels])>50){
-        //     tempval[channels] = Adcvalues[channels];
-
-        // }
-        // if (!DONESTATE[channels])
-        // {
         if (tempval[channels] > *PWMbuffer[channels])
         {
-            // while (tempval[channels] > *PWMbuffer[channels])
-            //{
+
             *PWMbuffer[channels] = *PWMbuffer[channels] + 10;
-            // _delay_us(250);
-            //}
         }
         else if (tempval[channels] < *PWMbuffer[channels])
         {
-            // while (tempval[channels] < *PWMbuffer[channels])
-            //{
+
             *PWMbuffer[channels] = *PWMbuffer[channels] - 10;
-            // _delay_us(250);
-            //}
         }
-        // else
-        // {
-        //     DONESTATE[channels] = true;
-        // }
-        // _delay_us(100);
     }
-    // }
 }
 
 void init_adc()
@@ -227,20 +205,18 @@ int main()
         switch (ctState)
         {
         case keyboardState:
-            if (RX0_COMPLETE_FLAG == 1&&bruh =='0')
+            if (RX0_COMPLETE_FLAG == 1 && bruh == '0')
             {
                 putstringuart(joystickstatestring);
                 ctState = joystickState;
                 RX0_COMPLETE_FLAG = 0;
             }
-            else if(RX0_COMPLETE_FLAG == 1)
+            else if (RX0_COMPLETE_FLAG == 1)
             {
-                // sendStrXY("hello", 0, 0);
-                //_delay_ms(1000);
+
                 updateposition_UART();
 
                 RX0_COMPLETE_FLAG = 0;
-                //_delay_ms(20);
             }
             break;
         case joystickState:
@@ -262,20 +238,12 @@ int main()
                 sendStrXY(buffer, 6, 0);
                 Adcready = false;
                 setpwm(Adcvalues);
-                // setpwm(map(Adcvalues[Y1],0,1023,500,2500),&OCR3A);
-                // setpwm(map(Adcvalues[X2],0,1023,500,2500),&OCR4A);
-                // setpwm(map(Adcvalues[Y2],0,1023,500,2500),&OCR5A);
                 _delay_ms(1);
             }
             break;
         default:
             break;
         }
-        // putstringuart("Du er vidst en værre niisse");
-        // while (RX0_COMPLETE_FLAG == 0)
-        //     ;
-
-        // RX0_COMPLETE_FLAG = 0;
     }
 }
 ISR(ADC_vect)
