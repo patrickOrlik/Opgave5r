@@ -8,7 +8,7 @@ void uart_init(void) {
     UBRR0H = (unsigned char)(MYUBRRF >> 8);
     UBRR0L = (unsigned char)MYUBRRF;
 
-    UCSR0A = (1<<U2X0);
+    // UCSR0A = (1<<U2X0);
     
     
     // Enable receiver and transmitter

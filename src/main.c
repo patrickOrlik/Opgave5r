@@ -14,6 +14,9 @@
 #include "I2C.h"
 #include "ssd1306.h"
 #include "clock.h"
+#include "UART.h"
+#define KEYBOARD 49
+#define JOYSTICK 48
 
 enum cord
 {
@@ -22,14 +25,24 @@ enum cord
     X2,
     Y2
 };
+typedef enum
+{
+    keyboardState,
+    joystickState
+} controleState;
+bool choosingState = false;
+volatile char bruh;
 unsigned int value = 0;
+volatile int RX0_COMPLETE_FLAG = 0;
 volatile bool Adcready = false;
 volatile char Adcres[10] = {0};
 volatile unsigned int channel = 0;
 volatile unsigned int Adcvalues[4] = {0};
 char tnpbuff[4] = {0};
 volatile uint16_t *PWMbuffer[4] = {&OCR1A, &OCR3A, &OCR4A, &OCR5A};
-
+char welcomestring[128] = "Hello and welcome to roboarm.\nPress 1 for Keyboard controle\nPress 0 for Joystick controle";
+char keyboardstatestring[264] = "You have chosen the keyboard controls are\n Extend crane: w-\t-Subtract crane: s-\t-Rotate left: a-\t-Rotate right: d-\n-Lift crane: i-\t-Lower crane: o-\t-Open claws: k-\t-Close claws: l\n";
+char joystickstatestring[64] = "you have now entered joystick controls\n";
 long map(long x, long in_min, long in_max, long out_min, long out_max)
 {
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
@@ -67,6 +80,50 @@ void init_phase_pwm5()
     ICR5 = 20000;
     OCR5A = 1500;
 }
+void setpwm_UART(uint8_t cardinalcord, uint8_t cardinaldirection)
+{
+    if (cardinaldirection == 1 && *PWMbuffer[cardinalcord] < 2500)
+    {
+        *PWMbuffer[cardinalcord] += 10;
+    }
+    else if (cardinaldirection == 0 && *PWMbuffer[cardinalcord] > 500)
+    {
+        *PWMbuffer[cardinalcord] -= 10;
+    }
+}
+void updateposition_UART()
+{
+    switch (bruh)
+    {
+    case 'a':
+        setpwm_UART(X1, 1);
+        break;
+    case 'd':
+        setpwm_UART(X1, 0);
+        break;
+    case 'w':
+        setpwm_UART(Y1, 1);
+        break;
+    case 's':
+        setpwm_UART(Y1, 0);
+        break;
+    case 'i':
+        setpwm_UART(Y2, 1);
+        break;
+    case 'o':
+        setpwm_UART(Y2, 0);
+        break;
+    case 'k':
+        setpwm_UART(X2, 1);
+        break;
+    case 'l':
+        setpwm_UART(X2, 0);
+        break;
+
+    default:
+        break;
+    }
+}
 
 void setpwm(volatile unsigned int value[])
 {
@@ -82,7 +139,7 @@ void setpwm(volatile unsigned int value[])
     // {
     for (int channels = 0; channels < 4; channels++)
     {
-        
+
         // if((Adcvalues[channels]-tempval[channels])>50){
         //     tempval[channels] = Adcvalues[channels];
 
@@ -117,7 +174,7 @@ void setpwm(volatile unsigned int value[])
 void init_adc()
 {
     ADCSRA |= (1 << ADPS0) | (1 << ADPS1) | (1 << ADPS2); // intern clock 125khz
-    ADMUX = (1 << REFS0);                                // Voltage reference selection
+    ADMUX = (1 << REFS0);                                 // Voltage reference selection
     ADCSRA |= (1 << ADEN) | (1 << ADIE);                  // enable adc and interrupt complete
 }
 void select_channel(char channel)
@@ -128,6 +185,7 @@ void select_channel(char channel)
 
 int main()
 {
+    uart_init();
     init_phase_pwm();
     init_phase_pwm3();
     init_phase_pwm4();
@@ -139,27 +197,85 @@ int main()
     InitializeDisplay();
     clear_display();
     char buffer[16];
+    controleState ctState;
     map(Adcvalues[X1], 0, 1023, 500, 2500);
     while (1)
     {
-        if (Adcready)
+        if (!choosingState)
         {
-
-            sprintf(buffer, "X1:%4d", Adcvalues[X1]);
-            sendStrXY(buffer, 0, 0);
-            sprintf(buffer, "Y1:%4d", Adcvalues[Y1]);
-            sendStrXY(buffer, 2, 0);
-            sprintf(buffer, "X2:%4d", Adcvalues[X2]);
-            sendStrXY(buffer, 4, 0);
-            sprintf(buffer, "Y2:%4d", Adcvalues[Y2]);
-            sendStrXY(buffer, 6, 0);
-            Adcready = false;
-            setpwm(Adcvalues);
-            // setpwm(map(Adcvalues[Y1],0,1023,500,2500),&OCR3A);
-            // setpwm(map(Adcvalues[X2],0,1023,500,2500),&OCR4A);
-            // setpwm(map(Adcvalues[Y2],0,1023,500,2500),&OCR5A);
-            _delay_ms(1);
+            putstringuart(welcomestring);
+            while (RX0_COMPLETE_FLAG == 0)
+                ;
+            switch (bruh)
+            {
+            case KEYBOARD:
+                putstringuart(keyboardstatestring);
+                ctState = keyboardState;
+                choosingState = true;
+                RX0_COMPLETE_FLAG = 0;
+                break;
+            case JOYSTICK:
+                putstringuart(joystickstatestring);
+                ctState = joystickState;
+                choosingState = true;
+                RX0_COMPLETE_FLAG = 0;
+                break;
+            default:
+                break;
+            }
         }
+        switch (ctState)
+        {
+        case keyboardState:
+            if (RX0_COMPLETE_FLAG == 1&&bruh =='0')
+            {
+                putstringuart(joystickstatestring);
+                ctState = joystickState;
+                RX0_COMPLETE_FLAG = 0;
+            }
+            else if(RX0_COMPLETE_FLAG == 1)
+            {
+                // sendStrXY("hello", 0, 0);
+                //_delay_ms(1000);
+                updateposition_UART();
+
+                RX0_COMPLETE_FLAG = 0;
+                //_delay_ms(20);
+            }
+            break;
+        case joystickState:
+            if (Adcready)
+            {
+                if (RX0_COMPLETE_FLAG == 1 && bruh == '0')
+                {
+                    putstringuart(keyboardstatestring);
+                    ctState = keyboardState;
+                    RX0_COMPLETE_FLAG = 0;
+                }
+                sprintf(buffer, "X1:%4d", Adcvalues[X1]);
+                sendStrXY(buffer, 0, 0);
+                sprintf(buffer, "Y1:%4d", Adcvalues[Y1]);
+                sendStrXY(buffer, 2, 0);
+                sprintf(buffer, "X2:%4d", Adcvalues[X2]);
+                sendStrXY(buffer, 4, 0);
+                sprintf(buffer, "Y2:%4d", Adcvalues[Y2]);
+                sendStrXY(buffer, 6, 0);
+                Adcready = false;
+                setpwm(Adcvalues);
+                // setpwm(map(Adcvalues[Y1],0,1023,500,2500),&OCR3A);
+                // setpwm(map(Adcvalues[X2],0,1023,500,2500),&OCR4A);
+                // setpwm(map(Adcvalues[Y2],0,1023,500,2500),&OCR5A);
+                _delay_ms(1);
+            }
+            break;
+        default:
+            break;
+        }
+        // putstringuart("Du er vidst en værre niisse");
+        // while (RX0_COMPLETE_FLAG == 0)
+        //     ;
+
+        // RX0_COMPLETE_FLAG = 0;
     }
 }
 ISR(ADC_vect)
@@ -182,4 +298,9 @@ ISR(TIMER0_COMPA_vect)
     {
         channel = 0;
     }
+}
+ISR(USART0_RX_vect)
+{
+    bruh = UDR0;
+    RX0_COMPLETE_FLAG = 1;
 }
