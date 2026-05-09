@@ -1,4 +1,3 @@
-#include <avr/io.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,6 +14,8 @@
 #include "ssd1306.h"
 #include "clock.h"
 #include "UART.h"
+#include "PWM.h"
+#include "ADC.h"
 #define KEYBOARD 49
 #define JOYSTICK 48
 
@@ -47,39 +48,7 @@ long map(long x, long in_min, long in_max, long out_min, long out_max)
 {
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
-void init_phase_pwm()
-{
-    DDRB |= (1 << PB5);
-    TCCR1A |= (1 << COM1A1);
-    TCCR1B = (1 << CS11) | (1 << WGM13);
-    ICR1 = 20000;
-    OCR1A = 1500;
-}
-void init_phase_pwm3()
-{
-    DDRE |= (1 << PE3);
-    TCCR3A |= (1 << COM3A1);
-    TCCR3B = (1 << CS11) | (1 << WGM13);
-    ICR3 = 20000;
-    OCR3A = 1500;
-}
-void init_phase_pwm4()
-{
-    DDRH |= (1 << PH3);
-    TCCR4A |= (1 << COM1A1);
-    TCCR4B = (1 << CS11) | (1 << WGM13);
-    ICR4 = 20000;
-    OCR4A = 1500;
-}
 
-void init_phase_pwm5()
-{
-    DDRL |= (1 << PL3);
-    TCCR5A |= (1 << COM1A1);
-    TCCR5B = (1 << CS11) | (1 << WGM13);
-    ICR5 = 20000;
-    OCR5A = 1500;
-}
 void setpwm_UART(uint8_t cardinalcord, uint8_t cardinaldirection)
 {
     if (cardinaldirection == 1 && *PWMbuffer[cardinalcord] < 2500)
@@ -125,7 +94,7 @@ void updateposition_UART()
     }
 }
 
-void setpwm(volatile unsigned int value[])
+void setpwm(volatile unsigned int value[],volatile uint16_t *pwmBuffer[4])
 {
     int tempval[4];
     for (int i = 0; i < 4; i++)
@@ -136,38 +105,25 @@ void setpwm(volatile unsigned int value[])
     for (int channels = 0; channels < 4; channels++)
     {
 
-        if (tempval[channels] > *PWMbuffer[channels])
+        if (tempval[channels] > *pwmBuffer[channels])
         {
 
-            *PWMbuffer[channels] = *PWMbuffer[channels] + 10;
+            *pwmBuffer[channels] = *pwmBuffer[channels] + 10;
         }
-        else if (tempval[channels] < *PWMbuffer[channels])
+        else if (tempval[channels] < *pwmBuffer[channels])
         {
 
-            *PWMbuffer[channels] = *PWMbuffer[channels] - 10;
+            *pwmBuffer[channels] = *pwmBuffer[channels] - 10;
         }
     }
 }
 
-void init_adc()
-{
-    ADCSRA |= (1 << ADPS0) | (1 << ADPS1) | (1 << ADPS2); // intern clock 125khz
-    ADMUX = (1 << REFS0);                                 // Voltage reference selection
-    ADCSRA |= (1 << ADEN) | (1 << ADIE);                  // enable adc and interrupt complete
-}
-void select_channel(char channel)
-{
-    ADMUX = 0x40;
-    ADMUX |= channel;
-}
+
 
 int main()
 {
     uart_init();
-    init_phase_pwm();
-    init_phase_pwm3();
-    init_phase_pwm4();
-    init_phase_pwm5();
+    init_all_PWM();
     init_adc();
     sei();
     CTC_init();
@@ -237,7 +193,7 @@ int main()
                 sprintf(buffer, "Y2:%4d", Adcvalues[Y2]);
                 sendStrXY(buffer, 6, 0);
                 Adcready = false;
-                setpwm(Adcvalues);
+                setpwm(Adcvalues, PWMbuffer);
                 _delay_ms(1);
             }
             break;
