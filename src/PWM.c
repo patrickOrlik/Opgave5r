@@ -22,8 +22,8 @@ void init_phase_pwm3()
 void init_phase_pwm4()
 {
     DDRH |= (1 << PH3);
-    TCCR4A |= (1 << COM1A1);
-    TCCR4B = (1 << CS11) | (1 << WGM13);
+    TCCR4A |= (1 << COM4A1);
+    TCCR4B = (1 << CS41) | (1 << WGM43);
     ICR4 = 20000;
     OCR4A = 1500;
 }
@@ -31,8 +31,8 @@ void init_phase_pwm4()
 void init_phase_pwm5()
 {
     DDRL |= (1 << PL3);
-    TCCR5A |= (1 << COM1A1);
-    TCCR5B = (1 << CS11) | (1 << WGM13);
+    TCCR5A |= (1 << COM5A1);
+    TCCR5B = (1 << CS51) | (1 << WGM53);
     ICR5 = 20000;
     OCR5A = 1500;
 }

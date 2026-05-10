@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <math.h>
 #include <avr/io.h>
+#include <avr/pgmspace.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,17 +34,18 @@ typedef enum
 } controleState;
 bool choosingState = false;
 volatile char bruh;
-unsigned int value = 0;
 volatile int RX0_COMPLETE_FLAG = 0;
 volatile bool Adcready = false;
-volatile char Adcres[10] = {0};
 volatile unsigned int channel = 0;
 volatile unsigned int Adcvalues[4] = {0};
-char tnpbuff[4] = {0};
 volatile uint16_t *PWMbuffer[4] = {&OCR1A, &OCR3A, &OCR4A, &OCR5A};
-char welcomestring[128] = "Hello and welcome to roboarm.\nPress 1 for Keyboard controle\nPress 0 for Joystick controle";
-char keyboardstatestring[264] = "You have chosen the keyboard controls are\n Extend crane: w\t-Subtract crane: s\t-Rotate left: a\t-Rotate right: d\n-Lift crane: i\t-Lower crane: o\t-Open claws: k\t-Close claws: l\nYou can always switch byt pressing 0\n";
-char joystickstatestring[128] = "you have now entered joystick controls\nYou can always switch byt pressing 0\n";
+
+const char welcomestring[] PROGMEM =
+    "Hello and welcome to roboarm.\nPress 1 for Keyboard controle\nPress 0 for Joystick controle";
+const char keyboardstatestring[] PROGMEM =
+    "You have chosen the keyboard controls are\n Extend crane: w\t-Subtract crane: s\t-Rotate left: a\t-Rotate right: d\n-Lift crane: i\t-Lower crane: o\t-Open claws: k\t-Close claws: l\nYou can always switch byt pressing 0\n";
+const char joystickstatestring[] PROGMEM =
+    "you have now entered joystick controls\nYou can always switch byt pressing 0\n";
 
 void updateposition_UART()
 {
@@ -90,30 +92,30 @@ int main()
     InitializeDisplay();
     clear_display();
     char buffer[16];
-    controleState ctState;
-    map(Adcvalues[X1], 0, 1023, 500, 2500);
+    controleState ctState = joystickState;
     while (1)
     {
         if (!choosingState)
         {
-            putstringuart(welcomestring);
+            putstring_P(welcomestring);
             while (RX0_COMPLETE_FLAG == 0)
                 ;
             switch (bruh)
             {
             case KEYBOARD:
-                putstringuart(keyboardstatestring);
+                putstring_P(keyboardstatestring);
                 ctState = keyboardState;
                 choosingState = true;
                 RX0_COMPLETE_FLAG = 0;
                 break;
             case JOYSTICK:
-                putstringuart(joystickstatestring);
+                putstring_P(joystickstatestring);
                 ctState = joystickState;
                 choosingState = true;
                 RX0_COMPLETE_FLAG = 0;
                 break;
             default:
+                RX0_COMPLETE_FLAG = 0;
                 break;
             }
         }
@@ -122,15 +124,13 @@ int main()
         case keyboardState:
             if (RX0_COMPLETE_FLAG == 1 && bruh == '0')
             {
-                putstringuart(joystickstatestring);
+                putstring_P(joystickstatestring);
                 ctState = joystickState;
                 RX0_COMPLETE_FLAG = 0;
             }
             else if (RX0_COMPLETE_FLAG == 1)
             {
-
                 updateposition_UART();
-
                 RX0_COMPLETE_FLAG = 0;
             }
             break;
@@ -139,7 +139,7 @@ int main()
             {
                 if (RX0_COMPLETE_FLAG == 1 && bruh == '0')
                 {
-                    putstringuart(keyboardstatestring);
+                    putstring_P(keyboardstatestring);
                     ctState = keyboardState;
                     RX0_COMPLETE_FLAG = 0;
                 }
@@ -153,7 +153,6 @@ int main()
                 sendStrXY(buffer, 6, 0);
                 Adcready = false;
                 setpwm(Adcvalues, PWMbuffer);
-                _delay_ms(1);
             }
             break;
         default:
@@ -161,27 +160,20 @@ int main()
         }
     }
 }
+
 ISR(ADC_vect)
 {
-
-    Adcready = true;
     Adcvalues[channel] = ADC;
+    channel = (channel + 1) & 0x03;
+    Adcready = true;
 }
 
 ISR(TIMER0_COMPA_vect)
 {
-
-    // Select next channel
     select_channel(channel);
-    // Start ADC conversion
-    ADCSRA |= (1 << ADSC); // enables adc
-
-    channel++;
-    if (channel > 3)
-    {
-        channel = 0;
-    }
+    ADCSRA |= (1 << ADSC);
 }
+
 ISR(USART0_RX_vect)
 {
     bruh = UDR0;

@@ -77,7 +77,7 @@
 #define INVERSE 2
 
 typedef uint8_t bitmap_t[8][128];
-uint8_t _i2c_address;
+extern uint8_t _i2c_address;
 void  InitializeDisplay();
 void sendStrXY( char *string, int X, int Y);
 void sendStr( char *string);

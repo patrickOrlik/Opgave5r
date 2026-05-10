@@ -15,7 +15,9 @@
 #include <math.h>
 #include <string.h>
 #include "I2C.h"
+#ifndef F_CPU
 #define F_CPU 16000000UL
+#endif
 #include <util/delay.h>
 #include <avr/pgmspace.h>
 #include "ssd1306.h"
@@ -35,14 +37,11 @@ void  ssd1306_command(uint8_t c)
 	I2C_Write(c);
 	I2C_Stop();
 }
-////////////////////////////////////////////
-//
-/**write a a data byte to the ssd1306*/
-void  ssd1306_data(uint8_t c)
+/**write a single data byte to the ssd1306*/
+static void ssd1306_data(uint8_t c)
 {
 	I2C_Start(_i2c_address);
-	I2C_Write(_i2c_address);
-	I2C_Write(0X40); // This byte is DATA
+	I2C_Write(0x40); // control byte: data follows
 	I2C_Write(c);
 	I2C_Stop();
 }
