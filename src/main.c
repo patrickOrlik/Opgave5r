@@ -42,83 +42,42 @@ volatile unsigned int Adcvalues[4] = {0};
 char tnpbuff[4] = {0};
 volatile uint16_t *PWMbuffer[4] = {&OCR1A, &OCR3A, &OCR4A, &OCR5A};
 char welcomestring[128] = "Hello and welcome to roboarm.\nPress 1 for Keyboard controle\nPress 0 for Joystick controle";
-char keyboardstatestring[264] = "You have chosen the keyboard controls are\n Extend crane: w-\t-Subtract crane: s-\t-Rotate left: a-\t-Rotate right: d-\n-Lift crane: i-\t-Lower crane: o-\t-Open claws: k-\t-Close claws: l\n";
-char joystickstatestring[64] = "you have now entered joystick controls\n";
-long map(long x, long in_min, long in_max, long out_min, long out_max)
-{
-    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
+char keyboardstatestring[264] = "You have chosen the keyboard controls are\n Extend crane: w\t-Subtract crane: s\t-Rotate left: a\t-Rotate right: d\n-Lift crane: i\t-Lower crane: o\t-Open claws: k\t-Close claws: l\nYou can always switch byt pressing 0\n";
+char joystickstatestring[128] = "you have now entered joystick controls\nYou can always switch byt pressing 0\n";
 
-void setpwm_UART(uint8_t cardinalcord, uint8_t cardinaldirection)
-{
-    if (cardinaldirection == 1 && *PWMbuffer[cardinalcord] < 2500)
-    {
-        *PWMbuffer[cardinalcord] += 10;
-    }
-    else if (cardinaldirection == 0 && *PWMbuffer[cardinalcord] > 500)
-    {
-        *PWMbuffer[cardinalcord] -= 10;
-    }
-}
 void updateposition_UART()
 {
     switch (bruh)
     {
     case 'a':
-        setpwm_UART(X1, 1);
+        setpwm_UART(X1, 1, PWMbuffer);
         break;
     case 'd':
-        setpwm_UART(X1, 0);
+        setpwm_UART(X1, 0, PWMbuffer);
         break;
     case 'w':
-        setpwm_UART(Y1, 1);
+        setpwm_UART(Y1, 1, PWMbuffer);
         break;
     case 's':
-        setpwm_UART(Y1, 0);
+        setpwm_UART(Y1, 0, PWMbuffer);
         break;
     case 'i':
-        setpwm_UART(Y2, 1);
+        setpwm_UART(Y2, 1, PWMbuffer);
         break;
     case 'o':
-        setpwm_UART(Y2, 0);
+        setpwm_UART(Y2, 0, PWMbuffer);
         break;
     case 'k':
-        setpwm_UART(X2, 1);
+        setpwm_UART(X2, 1, PWMbuffer);
         break;
     case 'l':
-        setpwm_UART(X2, 0);
+        setpwm_UART(X2, 0, PWMbuffer);
         break;
 
     default:
         break;
     }
 }
-
-void setpwm(volatile unsigned int value[],volatile uint16_t *pwmBuffer[4])
-{
-    int tempval[4];
-    for (int i = 0; i < 4; i++)
-    {
-        tempval[i] = map(value[i], 0, 1023, 500, 2500);
-    }
-
-    for (int channels = 0; channels < 4; channels++)
-    {
-
-        if (tempval[channels] > *pwmBuffer[channels])
-        {
-
-            *pwmBuffer[channels] = *pwmBuffer[channels] + 10;
-        }
-        else if (tempval[channels] < *pwmBuffer[channels])
-        {
-
-            *pwmBuffer[channels] = *pwmBuffer[channels] - 10;
-        }
-    }
-}
-
-
 
 int main()
 {
